@@ -4,6 +4,8 @@ import os
 import argparse
 import sys
 
+MAX_INPUT_SIZE = 20000
+
 def insert_pair(first, second, data_base_cursor):
     sql = "SELECT COUNT(*) FROM dictionary WHERE first = ? AND second = ?"
     cnt = data_base_cursor.execute(sql, (first, second)).fetchall()
@@ -49,7 +51,7 @@ def train(model_path, input_paths, is_lower):
                 else:
                     insert_pair(prev, word, cursor)
                     prev = word
-            if commit_counter >= 20000:
+            if commit_counter >= MAX_INPUT_SIZE:
                 print_counter += 1
                 commit_counter = 0
                 conn.commit()
@@ -73,14 +75,12 @@ param = open("train_param.txt")
 args = parser.parse_args(param.read().split())
 param.close()
 #args = parser.parse_args(input().split())
+
 if args.input_dir is None:
     train(args.model, sys.stdin, args.lc)
 else:
     files = os.listdir(args.input_dir)
-    i = 0
-    while i < len(files):
-        files[i] = args.input_dir + '/' + files[i]
-        i += 1
+    files = list(map(lambda x:os.path.join(args.input_dir, x), files))
     txt = filter(lambda x: x.endswith('.txt'), files)
     train(args.model, txt, args.lc)
     
