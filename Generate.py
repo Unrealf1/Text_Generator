@@ -1,6 +1,7 @@
 import sqlite3
 import argparse
 import random
+import numpy
 
 def weighted_choice(choices):
    total = sum(w for c, w in choices)
@@ -11,6 +12,8 @@ def weighted_choice(choices):
          return c
       upto += w
    return None
+
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--model", action="store",
@@ -44,11 +47,21 @@ while counter > 1:
             sql = "SELECT first FROM dictionary"
             cur_word = (cursor.execute(sql).fetchall())
             cur_word = cur_word[rnd % len(cur_word)][0]
-            print('\n', end=' ')
+            print()
     counter -= 1
     print(cur_word, end=' ')
     sql = "SELECT second, amount FROM dictionary WHERE first = ?"
     cursor.execute(sql, [(cur_word)])
-    cur_word = weighted_choice(cursor.fetchall())
+    poss = cursor.fetchall()
+    poss0 = [i[0] for i in poss]
+    poss1 = [i[1] for i in poss]
+    sm = 0
+    for i in poss1:
+        sm += i
+
+    for i in range (len(poss1)):
+        poss1[i] /= sm
+
+    cur_word = numpy.random.choice(poss0, p=poss1)
 print()
-input()
+
