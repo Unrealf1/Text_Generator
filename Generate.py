@@ -40,7 +40,7 @@ else:
 cur_word = args.seed
 counter = int(args.length)
 while counter > 1:
-    if cur_word == None:
+    if cur_word is None:
             sql = "SELECT COUNT(first) FROM dictionary "
             cnt = cursor.execute(sql).fetchall()
             rnd = int(random.uniform(0, cnt[0][0]-1))

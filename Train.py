@@ -73,7 +73,9 @@ param = open("train_param.txt")
 args = parser.parse_args(param.read().split())
 param.close()
 #args = parser.parse_args(input().split())
-if args.input_dir != None:
+if args.input_dir is None:
+    train(args.model, sys.stdin, args.lc)
+else:
     files = os.listdir(args.input_dir)
     i = 0
     while i < len(files):
@@ -81,6 +83,4 @@ if args.input_dir != None:
         i += 1
     txt = filter(lambda x: x.endswith('.txt'), files)
     train(args.model, txt, args.lc)
-else:
-    train(args.model, sys.stdin, args.lc)
-
+    
