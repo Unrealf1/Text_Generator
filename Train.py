@@ -37,7 +37,7 @@ def train(model_path, input_paths, is_lower):
             input_file = open(cur, "r")
         commit_counter = 0
         print_counter = 0
-        prev = '-1'
+        prev = None
         for line in input_file:
             commit_counter += len(line)	
             if is_lower:
@@ -46,7 +46,7 @@ def train(model_path, input_paths, is_lower):
             line = re.sub('_', ' ', line)
             line = re.findall(r"[\w']+", line)
             for word in line:
-                if prev == '-1':
+                if prev is None:
                     prev = word
                 else:
                     insert_pair(prev, word, cursor)
@@ -71,10 +71,8 @@ parser.add_argument("-i", "--input_dir", action="store",
                     help="input directory path")
 parser.add_argument("--lc", action="store_true",
                     help="all text concidered lower case")
-param = open("train_param.txt")
-args = parser.parse_args(param.read().split())
-param.close()
-#args = parser.parse_args(input().split())
+
+args = parser.parse_args(input().split())
 
 if args.input_dir is None:
     train(args.model, sys.stdin, args.lc)

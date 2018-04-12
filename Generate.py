@@ -24,10 +24,9 @@ parser.add_argument("-l", "--length", action="store",
                     help="lengs of text in words")
 parser.add_argument("-o", "--output", action="store",
                     help="output file path")
-#args = parser.parse_args(input().split())
-param = open("gen_param.txt")
-args = parser.parse_args(param.read().split())
-param.close()
+					
+args = parser.parse_args(input().split())
+
 try:
     file = open(args.model)
 except IOError as e:
