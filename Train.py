@@ -7,6 +7,8 @@ import shutil
 MAX_INPUT_SIZE = 20000
 
 def insert_pair(first, second, cursor):
+    if first == "aux" or second == "aux":
+        return
     if (first, second) in cursor:
         cursor[(first, second)] += 1
     else:
@@ -28,14 +30,16 @@ def commit(cursor, model_path):
             cur_file = I[0]
             if not file is None:
                 file.close()
-            file = open(os.path.join(model_path, I[0]), 'a')
+            file = open(os.path.join(model_path, I[0] + ".w"), 'a')
         file.write(I[1] + ' ' + str(cursor[I]) + '\n')
+    cursor = dict()
 
 
 def compress_commit(cursor, file_path):
     file = open(file_path, 'w')
     for I in cursor:
         file.write(I + ' ' + str(cursor[I]) + '\n')
+    cursor = dict()
         
 def compress(model_path):
     fl_list = os.listdir(model_path)
@@ -88,10 +92,12 @@ def train(model_path, input_paths, is_lower):
                 print_counter += 1
                 commit_counter = 0
                 commit(cursor, model_path)
+                cursor = dict()
                 if print_counter == 10:
                     print_counter = 0
                     print(cur, ' work in progress...')
         commit(cursor, model_path)
+        cursor = dict()
         if cur != sys.stdin:
             print("Trained " + cur)
     print("Train successful")

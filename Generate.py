@@ -24,10 +24,11 @@ while counter > 1:
     if cur_word is None:
             word_list = os.listdir(args.model)
             cur_word = numpy.random.choice(word_list)
+            cur_word = cur_word[0:-2]
             print()
     counter -= 1
     print(cur_word, end=' ')
-    word_file_name = os.path.join(args.model, cur_word)
+    word_file_name = os.path.join(args.model, cur_word) + ".w"
     if os.path.exists(word_file_name) and os.path.isfile(word_file_name):
         word_file = open(word_file_name, 'r')
         sm = 0
