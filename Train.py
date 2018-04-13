@@ -1,33 +1,66 @@
-import sqlite3
 import re
 import os
 import argparse
 import sys
+import shutil
 
 MAX_INPUT_SIZE = 20000
 
-def insert_pair(first, second, data_base_cursor):
-    sql = "SELECT COUNT(*) FROM dictionary WHERE first = ? AND second = ?"
-    cnt = data_base_cursor.execute(sql, (first, second)).fetchall()
-    if cnt[0][0] == 0:
-        data_base_cursor.execute("INSERT INTO dictionary(first, second, amount) VALUES(?, ?, 1)", (first, second))
+def insert_pair(first, second, cursor):
+    if (first, second) in cursor:
+        cursor[(first, second)] += 1
     else:
-        data_base_cursor.execute("UPDATE dictionary SET amount = amount + 1 WHERE first = ? AND second = ?", (first, second))
+        cursor[(first, second)] = 1
+
+        
+def insert_pair_compress(second, value, cursor):
+    if (second) in cursor:
+        cursor[(second)] += int(value)
+    else:
+        cursor[(second)] = int(value)
+
+def commit(cursor, model_path):
+    cursor_keys = sorted(cursor.keys())
+    cur_file = None
+    file = None
+    for I in cursor_keys:        
+        if not cur_file == I[0]:
+            cur_file = I[0]
+            if not file is None:
+                file.close()
+            file = open(os.path.join(model_path, I[0]), 'a')
+        file.write(I[1] + ' ' + str(cursor[I]) + '\n')
+
+
+def compress_commit(cursor, file_path):
+    file = open(file_path, 'w')
+    for I in cursor:
+        file.write(I + ' ' + str(cursor[I]) + '\n')
+        
+def compress(model_path):
+    fl_list = os.listdir(model_path)
+    for fl_name in fl_list:
+        fl = open(os.path.join(model_path, fl_name))
+        cursor = dict()
+        for line in fl:
+            line = line.split()
+            insert_pair_compress(line[0], line[1], cursor)
+        compress_commit(cursor, os.path.join(model_path, fl_name))
+            
 
 def train(model_path, input_paths, is_lower):
-    try:
-        file = open(model_path)
-    except IOError as e:
-        pass
-    else:
-        with file:
-           file.close()
-           os.remove(model_path)
+    if os.path.exists(model_path):
+        if os.path.isfile(model_path):
+            os.remove(model_path)
 
-    conn = sqlite3.connect(model_path)
-    cursor = conn.cursor()
-    cursor.execute("""CREATE TABLE dictionary
-                     (first text, second text, amount integer)""")
+        elif os.path.isdir(model_path):
+            shutil.rmtree(model_path)        
+    else:
+        pass
+
+    os.mkdir(model_path)   
+    cursor = dict()
+
     if input_paths == sys.stdin:
         input_paths = [sys.stdin]
     for cur in input_paths:
@@ -54,15 +87,17 @@ def train(model_path, input_paths, is_lower):
             if commit_counter >= MAX_INPUT_SIZE:
                 print_counter += 1
                 commit_counter = 0
-                conn.commit()
+                commit(cursor, model_path)
                 if print_counter == 10:
                     print_counter = 0
                     print(cur, ' work in progress...')
-        conn.commit()
+        commit(cursor, model_path)
         if cur != sys.stdin:
             print("Trained " + cur)
-
     print("Train successful")
+    print("Compressing data...")
+    compress(model_path)
+    print("Compressed successful")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--model", action="store",
