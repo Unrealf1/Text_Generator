@@ -58,9 +58,7 @@ def train(model_path, input_paths, is_lower):
             os.remove(model_path)
 
         elif os.path.isdir(model_path):
-            shutil.rmtree(model_path)        
-    else:
-        pass
+            shutil.rmtree(model_path)
 
     os.mkdir(model_path)   
     cursor = dict()
