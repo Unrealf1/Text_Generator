@@ -4,7 +4,7 @@ import argparse
 import sys
 import shutil
 
-MAX_INPUT_SIZE = 20000
+MAX_INPUT_SIZE = 50000
 
 def insert_pair(first, second, cursor):
     if first == "aux" or second == "aux":
