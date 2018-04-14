@@ -12,12 +12,11 @@ COMMIT_TRIGGER = 100000
 PRINT_TRIGGER = 5
 
 
-# This function inserts one pair of words(first, second) into the current data
-# correctly
-def insert_pair(first, second, current_data):
+# This function checks if pair given is correct
+def correct_pair(first, second):
     if first == "aux" or second == "aux":
-        return
-    current_data[(first, second)] += 1
+        return False
+    return True
 
 
 # This function commits new word pairs from current_data to model on the disc
@@ -52,7 +51,7 @@ def compress(model_path):
         compress_data = collections.defaultdict(int)
         for line in fl:
             line = line.split()
-            compress_data[line[0]] += line[1]
+            compress_data[line[0]] += int(line[1])
         compress_commit(compress_data, os.path.join(model_path, fl_name))
         fl.close()
 
@@ -91,7 +90,8 @@ def train(model_path, input_paths, is_lower):
                 if prev is None:
                     prev = word
                 else:
-                    insert_pair(prev, word, current_data)
+                    if correct_pair(prev, word):
+                        current_data[(prev, word)] += 1
                     prev = word
             if commit_counter >= COMMIT_TRIGGER:
                 print_counter += 1

@@ -18,7 +18,9 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.model) or os.path.isfile(args.model):
         print("Error: Can't open model!")
-
+    
+    if args.output is not None:
+        out = open(args.output, 'w')
     cur_word = args.seed
     counter = int(args.length)
     while counter > 1:
@@ -26,9 +28,15 @@ if __name__ == "__main__":
                 word_list = os.listdir(args.model)
                 cur_word = numpy.random.choice(word_list)
                 cur_word = cur_word[0:-2]
-                print()
+                if args.output is not None:
+                    out.write('\n')
+                else: 
+                    print()
         counter -= 1
-        print(cur_word, end=' ')
+        if args.output is not None:
+            out.write(cur_word + " ")
+        else: 
+            print(cur_word, end=' ')
         word_file_name = os.path.join(args.model, cur_word) + ".w"
         if os.path.exists(word_file_name) and os.path.isfile(word_file_name):
             word_file = open(word_file_name, 'r')
@@ -47,3 +55,5 @@ if __name__ == "__main__":
             cur_word = numpy.random.choice(poss_word, p=possibility)
         else:
             cur_word = None
+    if args.output is not None:
+        out.close()
