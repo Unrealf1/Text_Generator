@@ -6,11 +6,13 @@ import shutil
 
 # COMMIT_COUNTER stands for amount of symbols we are ready to store in RAM
 COMMIT_TRIGGER = 100000
-# PRINT_TRIGGER stands for amount commits during one file to print, tht program is still working
+# PRINT_TRIGGER stands for amount commits during one file to print that
+# program is still working
 PRINT_TRIGGER = 5
 
 
-# This function inserts one pair of words(first, second) into the current data correctly
+# This function inserts one pair of words(first, second) into the current data
+# correctly
 def insert_pair(first, second, current_data):
     if first == "aux" or second == "aux":
         return
@@ -34,7 +36,7 @@ def commit(current_data, model_path):
     current_data_keys = sorted(current_data.keys())
     cur_file = None
     file = None
-    for I in current_data_keys:        
+    for I in current_data_keys:
         if not cur_file == I[0]:
             cur_file = I[0]
             if file is not None:
@@ -43,7 +45,8 @@ def commit(current_data, model_path):
         file.write(I[1] + ' ' + str(current_data[I]) + '\n')
 
 
-# This is the analog of commit, but it's faster, because it works only with one file
+# This is the analog of commit, but it's faster, because it works only with
+# one file
 def compress_commit(current_data, file_path):
     file = open(file_path, 'w')
     for I in current_data:
@@ -63,7 +66,6 @@ def compress(model_path):
             insert_pair_compress(line[0], line[1], current_data)
         compress_commit(current_data, os.path.join(model_path, fl_name))
         fl.close()
-        
 
 
 # This is the main function of the file. It reads all files and creates model
@@ -90,10 +92,10 @@ def train(model_path, input_paths, is_lower):
         print_counter = 0
         prev = None
         for line in input_file:
-            commit_counter += len(line)	
+            commit_counter += len(line)
             if is_lower:
                 line = line.lower()
-            line = re.sub('\d', ' ', line)
+            line = re.sub('\\d', ' ', line)
             line = re.sub('_', ' ', line)
             line = re.findall(r"[\w']+", line)
             for word in line:
