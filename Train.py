@@ -3,6 +3,7 @@ import os
 import argparse
 import sys
 import shutil
+import collections
 
 # COMMIT_COUNTER stands for amount of symbols we are ready to store in RAM
 COMMIT_TRIGGER = 100000
@@ -16,19 +17,7 @@ PRINT_TRIGGER = 5
 def insert_pair(first, second, current_data):
     if first == "aux" or second == "aux":
         return
-    if (first, second) in current_data:
-        current_data[(first, second)] += 1
-    else:
-        current_data[(first, second)] = 1
-
-
-# This function inserts word(second because it is going after the word
-# specified in filename) and its amount into current_data
-def insert_pair_compress(second, value, current_data):
-    if second in current_data:
-        current_data[second] += int(value)
-    else:
-        current_data[second] = int(value)
+    current_data[(first, second)] += 1
 
 
 # This function commits new word pairs from current_data to model on the disc
@@ -47,10 +36,10 @@ def commit(current_data, model_path):
 
 # This is the analog of commit, but it's faster, because it works only with
 # one file
-def compress_commit(current_data, file_path):
+def compress_commit(compress_data, file_path):
     file = open(file_path, 'w')
-    for I in current_data:
-        file.write(I + ' ' + str(current_data[I]) + '\n')
+    for I in compress_data:
+        file.write(I + ' ' + str(compress_data[I]) + '\n')
     file.close()
 
 
@@ -60,11 +49,11 @@ def compress(model_path):
     fl_list = os.listdir(model_path)
     for fl_name in fl_list:
         fl = open(os.path.join(model_path, fl_name))
-        current_data = dict()
+        compress_data = collections.defaultdict(int)
         for line in fl:
             line = line.split()
-            insert_pair_compress(line[0], line[1], current_data)
-        compress_commit(current_data, os.path.join(model_path, fl_name))
+            compress_data[line[0]] += line[1]
+        compress_commit(compress_data, os.path.join(model_path, fl_name))
         fl.close()
 
 
@@ -79,7 +68,7 @@ def train(model_path, input_paths, is_lower):
             shutil.rmtree(model_path)
 
     os.mkdir(model_path)
-    current_data = dict()
+    current_data = collections.defaultdict(int)
 
     if input_paths == sys.stdin:
         input_paths = [sys.stdin]
@@ -108,13 +97,13 @@ def train(model_path, input_paths, is_lower):
                 print_counter += 1
                 commit_counter = 0
                 commit(current_data, model_path)
-                current_data = dict()
+                current_data = collections.defaultdict(int)
                 if print_counter == PRINT_TRIGGER:
                     print_counter = 0
                     print(cur, ' work in progress...')
         input_file.close()
         commit(current_data, model_path)
-        current_data = dict()
+        current_data = collections.defaultdict(int)
         if cur != sys.stdin:
             print("Trained " + cur)
     print("Train successful")
