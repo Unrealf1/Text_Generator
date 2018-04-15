@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
     if not os.path.exists(args.model) or os.path.isfile(args.model):
         print("Error: Can't open model!")
-    
+
     if args.output is not None:
         out = open(args.output, 'w')
     cur_word = args.seed
@@ -30,12 +30,12 @@ if __name__ == "__main__":
                 cur_word = cur_word[0:-2]
                 if args.output is not None:
                     out.write('\n')
-                else: 
+                else:
                     print()
         counter -= 1
         if args.output is not None:
             out.write(cur_word + " ")
-        else: 
+        else:
             print(cur_word, end=' ')
         word_file_name = os.path.join(args.model, cur_word) + ".w"
         if os.path.exists(word_file_name) and os.path.isfile(word_file_name):
