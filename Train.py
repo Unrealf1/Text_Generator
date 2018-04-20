@@ -57,25 +57,37 @@ def compress(model_path):
 
 
 # This is the main function of the file. It reads all files and creates model
-def train(model_path, input_paths, is_lower):
+def train(model_path, input_paths, is_lower, if_compress, if_delete):
     if os.path.exists(model_path):
-        print("Deleting old model...")
         if os.path.isfile(model_path):
+            print("Deleting file i place of model...")
             os.remove(model_path)
-
+            os.mkdir(model_path)
         elif os.path.isdir(model_path):
-            shutil.rmtree(model_path)
+            if if_delete:
+                print("Deleting old model...")
+                shutil.rmtree(model_path)
+                os.mkdir(model_path)
+            else:
+                print("Found old model")
+    else:
+        os.mkdir(model_path)
 
-    os.mkdir(model_path)
+    sys.stdout.flush()
     current_data = collections.defaultdict(int)
 
     if input_paths == sys.stdin:
         input_paths = [sys.stdin]
+    path_cnt = 0
     for cur in input_paths:
         if cur == sys.stdin:
             input_file = cur
         else:
+            path_cnt += 1
             input_file = open(cur, "r")
+            print("[%d/%d] " % (path_cnt, len(input_paths)), end=" ")
+            print("Processing " + cur, end=" ")
+        sys.stdout.flush()
         commit_counter = 0
         print_counter = 0
         prev = None
@@ -100,16 +112,20 @@ def train(model_path, input_paths, is_lower):
                 current_data = collections.defaultdict(int)
                 if print_counter == PRINT_TRIGGER:
                     print_counter = 0
-                    print(cur, ' work in progress...')
+                    print('.', end="")
+                    sys.stdout.flush()
         input_file.close()
         commit(current_data, model_path)
         current_data = collections.defaultdict(int)
         if cur != sys.stdin:
-            print("Trained " + cur)
+            print(end="\r")
+            print(" " * 100, end="\r")
+            sys.stdout.flush()
     print("Train successful")
-    print("Compressing data...")
-    compress(model_path)
-    print("Compressed successful")
+    if if_compress:
+        print("Compressing data...")
+        compress(model_path)
+        print("Compressed successful")
 
 
 if __name__ == "__main__":
@@ -120,13 +136,16 @@ if __name__ == "__main__":
                         help="input directory path")
     parser.add_argument("--lc", action="store_true",
                         help="all text considered lower case")
+    parser.add_argument("--nc", action="store_true",
+                        help="do not compress data")
+    parser.add_argument("--add", action="store_true",
+                        help="do not delete old model")
 
     args = parser.parse_args(input().split())
-
     if args.input_dir is None:
-        train(args.model, sys.stdin, args.lc)
+        train(args.model, sys.stdin, args.lc, not args.nc, args.add)
     else:
         files = os.listdir(args.input_dir)
         files = list(map(lambda x: os.path.join(args.input_dir, x), files))
-        txt = filter(lambda x: x.endswith('.txt'), files)
-        train(args.model, txt, args.lc)
+        txt = list(filter(lambda x: x.endswith('.txt'), files))
+        train(args.model, txt, args.lc, not args.nc, not args.add)
