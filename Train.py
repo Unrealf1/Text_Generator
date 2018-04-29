@@ -5,22 +5,24 @@ import sys
 import shutil
 import collections
 
-# COMMIT_COUNTER stands for amount of symbols we are ready to store in RAM
-COMMIT_TRIGGER = 100000
+# COMMIT_COUNTER stands for amount of symbols we are able to store in RAM
+COMMIT_TRIGGER = 5000000
 # PRINT_TRIGGER stands for amount commits during one file to print that
 # program is still working
-PRINT_TRIGGER = 5
+PRINT_TRIGGER = 1
 
 
 # This function checks if pair given is correct
 def correct_pair(first, second):
-    if first == "aux" or second == "aux":
-        return False
-    return True
+    # first - first word in pair;
+    # second - second word in pair
+    return not (first == "aux" or second == "aux" or first == "prn" or second == "prn")
 
 
 # This function commits new word pairs from current_data to model on the disc
 def commit(current_data, model_path):
+    # current_data is a dict of pairs of words and their number
+    # model_path is a path to model, given by user
     current_data_keys = sorted(current_data.keys())
     cur_file = None
     file = None
@@ -36,6 +38,8 @@ def commit(current_data, model_path):
 # This is the analog of commit, but it's faster, because it works only with
 # one file
 def compress_commit(compress_data, file_path):
+    # compress_data is a dict of words and their number
+    # file_path is a path to file(word name + '.w') we are going to write in
     file = open(file_path, 'w')
     for I in compress_data:
         file.write(I + ' ' + str(compress_data[I]) + '\n')
@@ -45,6 +49,7 @@ def compress_commit(compress_data, file_path):
 # This function compresses data: after Train() there are many pairs stated in
 # same file several times. So compress() unites them in one
 def compress(model_path):
+    # model_path is a path to model, given by user
     fl_list = os.listdir(model_path)
     for fl_name in fl_list:
         fl = open(os.path.join(model_path, fl_name))
@@ -58,6 +63,11 @@ def compress(model_path):
 
 # This is the main function of the file. It reads all files and creates model
 def train(model_path, input_paths, is_lower, if_compress, if_delete):
+    # model_path is a path to model, given by user
+    # input_path is a path to input directory, given by user
+    # is_lower is used to determine if all words have to be lowercase or not
+    # if_compress is used to determine if data will be compressed or not
+    # if_delete is used to determine if old model should be erased
     if os.path.exists(model_path):
         if os.path.isfile(model_path):
             print("Deleting file i place of model...")
