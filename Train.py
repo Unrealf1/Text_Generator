@@ -7,7 +7,7 @@ import collections
 
 
 # value of commit trgger, if not given from user
-DEFAULT_COMMIT_TRIGGER = 5000000
+DEFAULT_COMMIT_TRIGGER = 10000000
 
 
 # This function checks if pair given is correct
@@ -50,8 +50,18 @@ def compress_commit(compress_data, file_path):
 def compress(model_path, words_changed):
     # model_path is a path to model, given by user
     # unique_words is set of words changed during this session
+
+
+    word_cnt = 0
+    print("Have %d files to compress" % len(words_changed))
     for word in words_changed:
+        word_cnt += 1
         fl_name = word + '.w'
+
+        to_print = "[%d%%] " % (word_cnt * 100 // len(words_changed)) + fl_name
+        sys.stdout.flush()
+        print("\r" + to_print, end=" ")
+
         fl = open(os.path.join(model_path, fl_name))
         compress_data = collections.defaultdict(int)
         for line in fl:
@@ -59,6 +69,8 @@ def compress(model_path, words_changed):
             compress_data[line[0]] += int(line[1])
         compress_commit(compress_data, os.path.join(model_path, fl_name))
         fl.close()
+        print(" "*len(to_print), end=" ")
+    print()
 
 
 # This function change line, so Train can correctly work with it
@@ -95,12 +107,10 @@ def read_file(input_file, is_lower, model_path, triggers, unique_words):
 
         for word in line:
             if prev is None:
-                if correct_pair(word, "word"):
-                    unique_words.add(word)
                 prev = word
             else:
                 if correct_pair(prev, word):
-                    unique_words.add(word)
+                    unique_words.add(prev)
                     current_data[(prev, word)] += 1
                 prev = word
 
@@ -159,7 +169,7 @@ def train(model_path, input_paths, is_lower, if_compress, if_delete, triggers):
             path_cnt += 1
             input_file = open(cur, "r")
             print("[%d/%d] " % (path_cnt, len(input_paths)), end=" ")
-            print("Processing " + cur, end=" ")
+            print("Processing " + cur)
 
             # read file
             read_file(input_file, is_lower, model_path, triggers, unique_words)
@@ -182,10 +192,10 @@ def train(model_path, input_paths, is_lower, if_compress, if_delete, triggers):
 def init_triggers(commit_trigger_, triggers_dict):
     # commit_trigger_ is a commit_trigger given by user
     # triggers_dict is a dict of all triggers
-    if triggers_dict['commit'] is not None:
-        triggers_dict['commit'] = commit_trigger_
+    if commit_trigger_ is not None:
+        triggers_dict['commit'] = int(commit_trigger_)
     # calculation of print_trigger
-    triggers_dict['print'] = (max(DEFAULT_COMMIT_TRIGGER // commit_trigger_, 1))
+    triggers_dict['print'] = (max(DEFAULT_COMMIT_TRIGGER // triggers_dict['commit'], 1))
 
 
 # This function initialize parser
@@ -215,7 +225,7 @@ if __name__ == "__main__":
     # commit_trigger stands for amount of symbols we are able to store in RAM
     # print_trigger stands for amount commits during one file to print that
     # program is still working
-    init_triggers(int(args.commit_trigger), triggers)
+    init_triggers(args.commit_trigger, triggers)
 
     if args.input_dir is None:
         train(args.model, sys.stdin, args.lc,
