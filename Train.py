@@ -95,7 +95,7 @@ def compress(model_path):
 
     shutil.rmtree(os.path.join(model_path, "tmp"))
 
-    print("[%d%%] " % (word_cnt * 100 // len(to_compress)) + fl_name)
+    print("\r[%d%%] " % (word_cnt * 100 // len(to_compress)) + fl_name)
     sys.stdout.flush()
 
 
