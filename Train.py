@@ -19,9 +19,11 @@ def correct_pair(first, second):
 
 
 # This function commits new word pairs from current_data to model on the disc
-def commit(current_data, model_path):
+def commit(current_data, model_path, if_compress):
     # current_data is a dict of pairs of words and their number
     # model_path is a path to model, given by user
+    # if_compress is used to determine if data will be compressed or not
+
     current_data_keys = sorted(current_data.keys())
     cur_file = None
     file = None
@@ -31,6 +33,15 @@ def commit(current_data, model_path):
             if file is not None:
                 file.close()
             file = open(os.path.join(model_path, word_pair[0] + ".w"), 'a')
+
+            if if_compress:
+                # mark that this file should be compressed
+                if not os.path.exists(os.path.join(model_path, "tmp")):
+                    os.mkdir(os.path.join(model_path, "tmp"))
+                tmp = open(os.path.join(os.path.join(model_path, "tmp"),
+                           word_pair[0] + ".w"), 'w')
+                tmp.close()
+
         file.write(word_pair[1] + ' ' + str(current_data[word_pair]) + '\n')
 
 
@@ -39,6 +50,7 @@ def commit(current_data, model_path):
 def compress_commit(compress_data, file_path):
     # compress_data is a dict of words and their number
     # file_path is a path to file(word name + '.w') we are going to write in
+
     file = open(file_path, 'w')
     for word in compress_data:
         file.write(word + ' ' + str(compress_data[word]) + '\n')
@@ -47,36 +59,52 @@ def compress_commit(compress_data, file_path):
 
 # This function compresses data: after Train() there are many pairs stated in
 # same file several times. So compress() unites them in one
-def compress(model_path, words_changed):
+def compress(model_path):
     # model_path is a path to model, given by user
-    # unique_words is set of words changed during this session
 
+    # list of all files to compress
+    to_compress = os.listdir(os.path.join(model_path, "tmp"))
 
     word_cnt = 0
-    print("Have %d files to compress" % len(words_changed))
-    for word in words_changed:
-        word_cnt += 1
-        fl_name = word + '.w'
 
-        to_print = "[%d%%] " % (word_cnt * 100 // len(words_changed)) + fl_name
-        sys.stdout.flush()
-        print("\r" + to_print, end=" ")
+    # update output once in this amount of files
+    update = 15
+
+    print("Have %d files to compress" % len(to_compress))
+
+    for fl_name in to_compress:
+        word_cnt += 1
+
+        if word_cnt % update == 1:
+            to_print = "[%d%%] " % (word_cnt * 100 // len(to_compress))\
+                       + fl_name
+            print("\r" + to_print, end=" ")
+            sys.stdout.flush()
 
         fl = open(os.path.join(model_path, fl_name))
         compress_data = collections.defaultdict(int)
+
         for line in fl:
             line = line.split()
             compress_data[line[0]] += int(line[1])
+
         compress_commit(compress_data, os.path.join(model_path, fl_name))
         fl.close()
-        print(" "*len(to_print), end=" ")
-    print()
+        if word_cnt % update == 1:
+            print(" "*len(to_print), end=" ")
+        sys.stdout.flush()
+
+    shutil.rmtree(os.path.join(model_path, "tmp"))
+
+    print("[%d%%] " % (word_cnt * 100 // len(to_compress)) + fl_name)
+    sys.stdout.flush()
 
 
 # This function change line, so Train can correctly work with it
 def line_processing(list_line, is_lower):
     # list_line is a list of one string, function is going to change
     # is_lower is used to determine if all words have to be lowercase or not
+
     if is_lower:
         list_line[0] = list_line[0].lower()
     list_line[0] = re.sub('\\d', ' ', list_line[0])
@@ -85,12 +113,12 @@ def line_processing(list_line, is_lower):
 
 
 # This function reads file and commits changes to the model
-def read_file(input_file, is_lower, model_path, triggers, unique_words):
+def read_file(input_file, is_lower, model_path, triggers, if_compress):
     # model_path is a path to model, given by user
     # input_file is a file function is going to read
     # is_lower is used to determine if all words have to be lowercase or not
     # triggers is a dict of all triggers
-    # unique_words is set of words changed during this session
+    # if_compress is used to determine if data will be compressed or not
 
     current_data = collections.defaultdict(int)
 
@@ -110,7 +138,6 @@ def read_file(input_file, is_lower, model_path, triggers, unique_words):
                 prev = word
             else:
                 if correct_pair(prev, word):
-                    unique_words.add(prev)
                     current_data[(prev, word)] += 1
                 prev = word
 
@@ -118,7 +145,7 @@ def read_file(input_file, is_lower, model_path, triggers, unique_words):
         if commit_counter >= triggers['commit']:
             print_counter += 1
             commit_counter = 0
-            commit(current_data, model_path)
+            commit(current_data, model_path, if_compress)
             current_data = collections.defaultdict(int)
             # Check if should print yet
             if print_counter == triggers['print']:
@@ -126,7 +153,7 @@ def read_file(input_file, is_lower, model_path, triggers, unique_words):
                 print('.', end="")
                 sys.stdout.flush()
 
-    commit(current_data, model_path)
+    commit(current_data, model_path, if_compress)
 
 
 # This is the main function of the file. It reads all files and creates model
@@ -159,7 +186,6 @@ def train(model_path, input_paths, is_lower, if_compress, if_delete, triggers):
         input_paths = [sys.stdin]
 
     # Reading each file
-    unique_words = set()
     path_cnt = 0
     for cur in input_paths:
         if cur == sys.stdin:
@@ -169,10 +195,11 @@ def train(model_path, input_paths, is_lower, if_compress, if_delete, triggers):
             path_cnt += 1
             input_file = open(cur, "r")
             print("[%d/%d] " % (path_cnt, len(input_paths)), end=" ")
-            print("Processing " + cur)
+            print("Processing " + cur, end="")
 
             # read file
-            read_file(input_file, is_lower, model_path, triggers, unique_words)
+            read_file(input_file, is_lower, model_path, triggers, if_compress)
+            print()
 
             # Closing current file
             input_file.close()
@@ -184,7 +211,7 @@ def train(model_path, input_paths, is_lower, if_compress, if_delete, triggers):
     # Compressing files
     if if_compress:
         print("Compressing data...")
-        compress(model_path, unique_words)
+        compress(model_path)
         print("Compressed successful")
 
 
@@ -192,10 +219,12 @@ def train(model_path, input_paths, is_lower, if_compress, if_delete, triggers):
 def init_triggers(commit_trigger_, triggers_dict):
     # commit_trigger_ is a commit_trigger given by user
     # triggers_dict is a dict of all triggers
+
     if commit_trigger_ is not None:
         triggers_dict['commit'] = int(commit_trigger_)
     # calculation of print_trigger
-    triggers_dict['print'] = (max(DEFAULT_COMMIT_TRIGGER // triggers_dict['commit'], 1))
+    triggers_dict['print'] = (
+        max(DEFAULT_COMMIT_TRIGGER // triggers_dict['commit'], 1))
 
 
 # This function initialize parser
