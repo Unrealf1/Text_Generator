@@ -30,10 +30,6 @@ def commit(current_data, model_path, if_compress):
     for word_pair in current_data_keys:
         if not cur_file == word_pair[0]:
             cur_file = word_pair[0]
-            if file is not None:
-                file.close()
-            file = open(os.path.join(model_path, word_pair[0] + ".w"), 'a')
-
             if if_compress:
                 # mark that this file should be compressed
                 if not os.path.exists(os.path.join(model_path, "tmp")):
@@ -41,6 +37,9 @@ def commit(current_data, model_path, if_compress):
                 tmp = open(os.path.join(os.path.join(model_path, "tmp"),
                            word_pair[0] + ".w"), 'w')
                 tmp.close()
+            if file is not None:
+                file.close()
+            file = open(os.path.join(model_path, word_pair[0] + ".w"), 'a')
 
         file.write(word_pair[1] + ' ' + str(current_data[word_pair]) + '\n')
 
