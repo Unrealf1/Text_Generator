@@ -65,7 +65,7 @@ if __name__ == "__main__":
     # start of text generation
     cur_word = args.seed
     counter = int(args.length)
-    while counter > 1:
+    for i in range(counter):
         if cur_word is None:
             # generate random word
             cur_word = generate_random_word(args.model)
@@ -76,7 +76,6 @@ if __name__ == "__main__":
                 print()
 
         # printing another word
-        counter -= 1
         if args.output is not None:
             out.write(cur_word + " ")
         else:
