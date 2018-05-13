@@ -9,6 +9,9 @@ import collections
 # value of commit trgger, if not given from user
 DEFAULT_COMMIT_TRIGGER = 10000000
 
+# once in THIS number of files compress progress will be updated
+COMPRESS_PRINT_TRIGGER = 15
+
 
 # This function checks if pair given is correct
 def correct_pair(first, second):
@@ -66,15 +69,12 @@ def compress(model_path):
 
     word_cnt = 0
 
-    # update output once in this amount of files
-    update = 15
-
     print("Have %d files to compress" % len(to_compress))
 
     for fl_name in to_compress:
         word_cnt += 1
 
-        if word_cnt % update == 1:
+        if word_cnt % COMPRESS_PRINT_TRIGGER == 1:
             to_print = "[%d%%] " % (word_cnt * 100 // len(to_compress))\
                        + fl_name
             print("\r" + to_print, end=" ")
@@ -89,7 +89,7 @@ def compress(model_path):
 
         compress_commit(compress_data, os.path.join(model_path, fl_name))
         fl.close()
-        if word_cnt % update == 1:
+        if word_cnt % COMPRESS_PRINT_TRIGGER == 1:
             print(" "*len(to_print), end=" ")
         sys.stdout.flush()
 
