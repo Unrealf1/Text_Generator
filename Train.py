@@ -247,7 +247,7 @@ def init_parser():
 
 if __name__ == "__main__":
     parser = init_parser()
-    args = parser.parse_args(input().split())
+    args = parser.parse_args()
 
     triggers = {"commit": DEFAULT_COMMIT_TRIGGER, 'print': 1}
     # commit_trigger stands for amount of symbols we are able to store in RAM

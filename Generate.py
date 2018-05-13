@@ -54,7 +54,7 @@ def init_parser():
 
 if __name__ == "__main__":
     parser = init_parser()
-    args = parser.parse_args(input().split())
+    args = parser.parse_args()
 
     if not os.path.exists(args.model) or os.path.isfile(args.model):
         print("Error: Can't open model!")
