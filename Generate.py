@@ -1,12 +1,16 @@
 import argparse
 import numpy
 import os
+import sys
+
+
+DEFAULT_NEW_LINE_TRIGGER = 50
 
 
 # this function generate random word from all in model
 def generate_random_word(model):
     # model is a path to model, given by user
-    return numpy.random.choice(os.listdir(model))[0:-2]
+    return numpy.random.choice(os.listdir(model))[:-len('.w')]
 
 
 # this function generate random word from .w file given
@@ -32,6 +36,7 @@ def choose_next_word(word_file_name):
         for i in range(len(possibility)):
             possibility[i] = int(possibility[i]) / sm
 
+        word_file.close()
         # choosing next word
         return numpy.random.choice(poss_word, p=possibility)
     else:
@@ -49,6 +54,8 @@ def init_parser():
                         help="lengs of text in words")
     parser.add_argument("-o", "--output", action="store",
                         help="output file path")
+    parser.add_argument("-p", "--paragraph", action="store",
+                        help="length of paragraph. Default:%d" % DEFAULT_NEW_LINE_TRIGGER)
     return parser
 
 
@@ -60,28 +67,28 @@ if __name__ == "__main__":
         print("Error: Can't open model!")
 
     if args.output is not None:
-        out = open(args.output, 'w')
+        sys.stdout = open(args.output, 'w')
+
+    new_line_trigger = DEFAULT_NEW_LINE_TRIGGER
+    if args.paragraph is not None:
+        new_line_trigger = int(args.paragraph)
 
     # start of text generation
     cur_word = args.seed
     counter = int(args.length)
+
     for i in range(counter):
         if cur_word is None:
             # generate random word
             cur_word = generate_random_word(args.model)
 
-            if args.output is not None:
-                out.write('\n')
-            else:
-                print()
+        if i % new_line_trigger == 0:
+            print()
 
         # printing another word
-        if args.output is not None:
-            out.write(cur_word + " ")
-        else:
-            print(cur_word, end=' ')
+        print(cur_word, end=' ')
 
         cur_word = choose_next_word(os.path.join(args.model, cur_word) + ".w")
 
     if args.output is not None:
-        out.close()
+        sys.stdout.close()
