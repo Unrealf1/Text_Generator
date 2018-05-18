@@ -76,6 +76,7 @@ if __name__ == "__main__":
     # start of text generation
     cur_word = args.seed
     counter = int(args.length)
+    to_print = list()
 
     for i in range(counter):
         if cur_word is None:
@@ -83,12 +84,18 @@ if __name__ == "__main__":
             cur_word = generate_random_word(args.model)
 
         if i % new_line_trigger == 0:
+            for word in to_print:
+                print(word, end=' ')
             print()
+            to_print = list()
 
         # printing another word
-        print(cur_word, end=' ')
+        to_print.append(cur_word)
 
         cur_word = choose_next_word(os.path.join(args.model, cur_word) + ".w")
 
+    for word in to_print:
+        print(word, end=' ')
+        
     if args.output is not None:
         sys.stdout.close()
