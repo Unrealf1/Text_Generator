@@ -29,12 +29,12 @@ def choose_next_word(word_file_name):
         for word_number in word_file:
             tmp = word_number.split()
             poss_word.append(tmp[0])
-            possibility.append(tmp[1])
+            possibility.append(int(tmp[1]))
             sm += int(tmp[1])
 
         # normalization of possibility
         for i in range(len(possibility)):
-            possibility[i] = int(possibility[i]) / sm
+            possibility[i] = possibility[i] / sm
 
         word_file.close()
         # choosing next word
@@ -96,6 +96,5 @@ if __name__ == "__main__":
 
     for word in to_print:
         print(word, end=' ')
-        
     if args.output is not None:
         sys.stdout.close()
