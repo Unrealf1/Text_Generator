@@ -65,7 +65,12 @@ def compress(model_path):
     # model_path is a path to model, given by user
 
     # list of all files to compress
-    to_compress = os.listdir(os.path.join(model_path, "tmp"))
+    tmp_path = os.path.join(model_path, "tmp")
+    if not os.path.exists(tmp_path):
+        print("Have nothing to compress")
+        return
+
+    to_compress = os.listdir(tmp_path)
 
     word_cnt = 0
 
@@ -196,10 +201,11 @@ def train(model_path, input_paths, is_lower, if_compress, if_delete, triggers):
             print("[%d/%d] " % (path_cnt, len(input_paths)), end=" ")
             print("Processing " + cur, end="")
 
-            # read file
-            read_file(input_file, is_lower, model_path, triggers, if_compress)
-            print()
+        # read file
+        read_file(input_file, is_lower, model_path, triggers, if_compress)
+        print()
 
+        if cur != sys.stdin:
             # Closing current file
             input_file.close()
         sys.stdout.flush()
