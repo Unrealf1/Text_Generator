@@ -20,7 +20,7 @@ def choose_next_word(word_file_name):
 
     if os.path.exists(word_file_name) and os.path.isfile(word_file_name):
         # reading file
-        word_file = open(word_file_name, 'r')
+        word_file = open(word_file_name, 'r', encoding="utf8")
         sm = 0
         poss_word = list()
         possibility = list()
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         print("Error: Can't open model!")
 
     if args.output is not None:
-        sys.stdout = open(args.output, 'w')
+        sys.stdout = open(args.output, 'w', encoding="utf8")
 
     new_line_trigger = DEFAULT_NEW_LINE_TRIGGER
     if args.paragraph is not None:
@@ -83,7 +83,7 @@ if __name__ == "__main__":
             # generate random word
             cur_word = generate_random_word(args.model)
 
-        if i % new_line_trigger == 0:
+        if (i + 1) % new_line_trigger == 0:
             for word in to_print:
                 print(word, end=' ')
             print()

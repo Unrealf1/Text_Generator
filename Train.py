@@ -9,6 +9,9 @@ import collections
 # value of commit trgger, if not given from user
 DEFAULT_COMMIT_TRIGGER = 10000000
 
+# every such number of words processed programm will report
+READFILE_PRINT_TRIGGER = 1000
+
 # once in THIS number of files compress progress will be updated
 COMPRESS_PRINT_TRIGGER = 15
 
@@ -27,6 +30,9 @@ def commit(current_data, model_path, if_compress):
     # model_path is a path to model, given by user
     # if_compress is used to determine if data will be compressed or not
 
+    if if_compress and not os.path.exists(os.path.join(model_path, "tmp")):
+        os.mkdir(os.path.join(model_path, "tmp"))
+
     current_data_keys = sorted(current_data.keys())
     cur_file = None
     file = None
@@ -35,14 +41,12 @@ def commit(current_data, model_path, if_compress):
             cur_file = word_pair[0]
             if if_compress:
                 # mark that this file should be compressed
-                if not os.path.exists(os.path.join(model_path, "tmp")):
-                    os.mkdir(os.path.join(model_path, "tmp"))
                 tmp = open(os.path.join(os.path.join(model_path, "tmp"),
-                           word_pair[0] + ".w"), 'w')
+                           word_pair[0] + ".w"), 'w', encoding="utf8")
                 tmp.close()
             if file is not None:
                 file.close()
-            file = open(os.path.join(model_path, word_pair[0] + ".w"), 'a')
+            file = open(os.path.join(model_path, word_pair[0] + ".w"), 'a', encoding="utf8")
 
         file.write(word_pair[1] + ' ' + str(current_data[word_pair]) + '\n')
 
@@ -53,7 +57,7 @@ def compress_commit(compress_data, file_path):
     # compress_data is a dict of words and their number
     # file_path is a path to file(word name + '.w') we are going to write in
 
-    file = open(file_path, 'w')
+    file = open(file_path, 'w', encoding="utf8")
     for word in compress_data:
         file.write(word + ' ' + str(compress_data[word]) + '\n')
     file.close()
@@ -85,7 +89,7 @@ def compress(model_path):
             print("\r" + to_print, end=" ")
             sys.stdout.flush()
 
-        fl = open(os.path.join(model_path, fl_name))
+        fl = open(os.path.join(model_path, fl_name), encoding="utf8")
         compress_data = collections.defaultdict(int)
 
         for line in fl:
@@ -127,6 +131,7 @@ def read_file(input_file, is_lower, model_path, triggers, if_compress):
     current_data = collections.defaultdict(int)
 
     # Reading current file
+    words_total = 0
     commit_counter = 0
     print_counter = 0
     prev = None
@@ -138,26 +143,30 @@ def read_file(input_file, is_lower, model_path, triggers, if_compress):
         line = list_line[0]
 
         for word in line:
+            print_counter += 1
             if prev is None:
                 prev = word
             else:
                 if correct_pair(prev, word):
                     current_data[(prev, word)] += 1
                 prev = word
+       
 
         # Check if should commit yet
         if commit_counter >= triggers['commit']:
-            print_counter += 1
             commit_counter = 0
             commit(current_data, model_path, if_compress)
             current_data = collections.defaultdict(int)
-            # Check if should print yet
-            if print_counter == triggers['print']:
-                print_counter = 0
-                print('.', end="")
-                sys.stdout.flush()
+
+        # Check if should print yet
+        if print_counter >= triggers['readfile_print']:
+            words_total += print_counter
+            print('More than', words_total, "words processed from this file", end="\r")
+            print_counter = 0
+            sys.stdout.flush() 
 
     commit(current_data, model_path, if_compress)
+    print(words_total + print_counter, "words processed from this file", ""*30)
 
 
 # This is the main function of the file. It reads all files and creates model
@@ -197,9 +206,9 @@ def train(model_path, input_paths, is_lower, if_compress, if_delete, triggers):
         else:
             # open file and print message
             path_cnt += 1
-            input_file = open(cur, "r")
+            input_file = open(cur, "r", encoding="utf8")
             print("[%d/%d] " % (path_cnt, len(input_paths)), end=" ")
-            print("Processing " + cur, end="")
+            print("Processing " + cur + "...")
 
         # read file
         read_file(input_file, is_lower, model_path, triggers, if_compress)
@@ -255,7 +264,7 @@ if __name__ == "__main__":
     parser = init_parser()
     args = parser.parse_args()
 
-    triggers = {"commit": DEFAULT_COMMIT_TRIGGER, 'print': 1}
+    triggers = {"commit": DEFAULT_COMMIT_TRIGGER, 'print': 1, 'readfile_print': READFILE_PRINT_TRIGGER}
     # commit_trigger stands for amount of symbols we are able to store in RAM
     # print_trigger stands for amount commits during one file to print that
     # program is still working
